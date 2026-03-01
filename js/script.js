@@ -197,12 +197,10 @@ async function handleComment(comment, username) {
 
     isThinking = true;
     const sendButton = document.getElementById('sendButton');
-    const voiceButton = document.getElementById('voiceButton');
     const userCommentElement = document.querySelector("#userComment");
 
     sendButton.disabled = true;
     sendButton.innerHTML = '<div class="loading"></div>';
-    voiceButton.disabled = true;
     userCommentElement.textContent = username + ": " + comment;
 
     // キーワードに基づいて適切な画像を選択
@@ -233,7 +231,6 @@ async function handleComment(comment, username) {
         isThinking = false;
         sendButton.disabled = false;
         sendButton.textContent = '送信';
-        voiceButton.disabled = false;
     }
 }
 
