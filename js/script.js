@@ -68,15 +68,10 @@ function initSpeechRecognition() {
 
         recognition.onerror = function(event) {
             console.error('音声認識エラー:', event.error);
-
-            const userCommentElement = document.querySelector("#userComment");
+            // マイク拒否のみ停止。それ以外はonendで再起動に任せる
             if (event.error === 'not-allowed') {
+                const userCommentElement = document.querySelector("#userComment");
                 userCommentElement.textContent = 'マイクの使用が許可されていません。ブラウザの設定を確認してください。';
-                stopVoiceRecording();
-            } else if (event.error === 'no-speech' || event.error === 'aborted') {
-                // 無音・中断の場合は継続（onendで再起動する）
-            } else {
-                userCommentElement.textContent = '音声認識でエラーが発生しました: ' + event.error;
                 stopVoiceRecording();
             }
         };
