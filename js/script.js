@@ -3,6 +3,7 @@ var isThinking = false;
 var LIVE_OWNER_ID = createUuid();
 var recognition = null;
 var isRecording = false;
+var isRestarting = false;
 
 // UUID生成
 function createUuid() {
@@ -49,14 +50,17 @@ function initSpeechRecognition() {
 
         recognition.onend = function() {
             // 手動で停止された場合のみ録音状態を解除
-            if (isRecording) {
-                // 少し待ってから再開（iOS Safariの状態遷移を待つ）
+            if (isRecording && !isRestarting) {
+                isRestarting = true;
                 setTimeout(() => {
-                    try {
-                        recognition.start();
-                    } catch (e) {
-                        console.log('音声認識の再開に失敗:', e);
-                        stopVoiceRecording();
+                    isRestarting = false;
+                    if (isRecording) {
+                        try {
+                            recognition.start();
+                        } catch (e) {
+                            console.log('音声認識の再開に失敗:', e);
+                            stopVoiceRecording();
+                        }
                     }
                 }, 300);
             }
