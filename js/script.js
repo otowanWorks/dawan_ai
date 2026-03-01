@@ -50,14 +50,15 @@ function initSpeechRecognition() {
         recognition.onend = function() {
             // 手動で停止された場合のみ録音状態を解除
             if (isRecording) {
-                // 自動的に再開しようとする場合は再開
-                try {
-                    recognition.start();
-                } catch (e) {
-                    console.log('音声認識の再開に失敗:', e);
-                    // 再開に失敗した場合は録音状態を解除
-                    stopVoiceRecording();
-                }
+                // 少し待ってから再開（iOS Safariの状態遷移を待つ）
+                setTimeout(() => {
+                    try {
+                        recognition.start();
+                    } catch (e) {
+                        console.log('音声認識の再開に失敗:', e);
+                        stopVoiceRecording();
+                    }
+                }, 300);
             }
         };
 
@@ -68,9 +69,8 @@ function initSpeechRecognition() {
             if (event.error === 'not-allowed') {
                 userCommentElement.textContent = 'マイクの使用が許可されていません。ブラウザの設定を確認してください。';
                 stopVoiceRecording();
-            } else if (event.error === 'no-speech') {
-                // 無音の場合は継続
-                userCommentElement.textContent = '音声を検出中...';
+            } else if (event.error === 'no-speech' || event.error === 'aborted') {
+                // 無音・中断の場合は継続（onendで再起動する）
             } else {
                 userCommentElement.textContent = '音声認識でエラーが発生しました: ' + event.error;
                 stopVoiceRecording();
