@@ -221,7 +221,7 @@ async function handleComment(comment, username) {
         startTyping({
             el: "#aiResponseUtterance",
             string: formattedResponse,
-            speed: 30
+            speed: 50
         });
 
     } catch (error) {
