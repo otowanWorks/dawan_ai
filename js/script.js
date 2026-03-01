@@ -3,6 +3,7 @@ var isThinking = false;
 var LIVE_OWNER_ID = createUuid();
 var recognition = null;
 var isRecording = false;
+var wantsToRecord = false; // ユーザーが録音を望んでいるか
 var isRestarting = false;
 
 // UUID生成
@@ -49,17 +50,18 @@ function initSpeechRecognition() {
         };
 
         recognition.onend = function() {
-            // 手動で停止された場合のみ録音状態を解除
-            if (isRecording && !isRestarting) {
+            isRecording = false;
+            // wantsToRecordがtrueなら再起動を試みる
+            if (wantsToRecord && !isRestarting) {
                 isRestarting = true;
                 setTimeout(() => {
                     isRestarting = false;
-                    if (isRecording) {
+                    if (wantsToRecord && !isRecording) {
                         try {
                             recognition.start();
                         } catch (e) {
                             console.log('音声認識の再開に失敗:', e);
-                            stopVoiceRecording();
+                            // 失敗してもwantsToRecordは維持（API完了後に再試行）
                         }
                     }
                 }, 300);
@@ -70,6 +72,7 @@ function initSpeechRecognition() {
             console.error('音声認識エラー:', event.error);
             // マイク拒否のみ停止。それ以外はonendで再起動に任せる
             if (event.error === 'not-allowed') {
+                wantsToRecord = false;
                 const userCommentElement = document.querySelector("#userComment");
                 userCommentElement.textContent = 'マイクの使用が許可されていません。ブラウザの設定を確認してください。';
                 stopVoiceRecording();
@@ -100,12 +103,14 @@ function toggleVoiceInput() {
         return;
     }
 
-    if (isRecording) {
+    if (wantsToRecord || isRecording) {
         // 手動停止
+        wantsToRecord = false;
         stopVoiceRecording();
         recognition.stop();
     } else {
         // 開始
+        wantsToRecord = true;
         try {
             recognition.start();
         } catch (e) {
@@ -230,6 +235,20 @@ async function handleComment(comment, username) {
         isThinking = false;
         sendButton.disabled = false;
         sendButton.textContent = '送信';
+        // API完了後、録音が途切れていれば再起動（iOSでfetch中にstart()が失敗した場合の救済）
+        if (wantsToRecord && !isRecording && !isRestarting) {
+            isRestarting = true;
+            setTimeout(() => {
+                isRestarting = false;
+                if (wantsToRecord && !isRecording) {
+                    try {
+                        recognition.start();
+                    } catch (e) {
+                        console.log('API完了後の再起動に失敗:', e);
+                    }
+                }
+            }, 200);
+        }
     }
 }
 
